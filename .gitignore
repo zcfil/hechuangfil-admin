@@ -1,0 +1,6 @@
+vendor/
+.idea
+runtime/
+/xAdmin.exe
+config/settings.yml
+/log/

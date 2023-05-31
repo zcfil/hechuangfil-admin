@@ -1,0 +1,248 @@
+Index: models/apismodel.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- models/apismodel.go	(revision a9441c629598634f84edefd203e46bdac7304318)
++++ models/apismodel.go	(date 1588067958319)
+@@ -70,7 +70,10 @@
+ 			where l.lottery_period=? and is_draw = ? `
+ 	o := orm.NewOrm()
+ 	o.Raw(sql+limit,period,1).Values(&result)
+-	total = GetTotalCount(sql,period)
++
++
++	total = GetTotalCount(sql,period,"1")
++
+ 	return
+ }
+ //获取每月游戏下注次数
+Index: apis/wallets.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- apis/wallets.go	(revision a9441c629598634f84edefd203e46bdac7304318)
++++ apis/wallets.go	(date 1588083278526)
+@@ -45,66 +45,14 @@
+ // @Success 200 {object} models.Response "{"code": 200, "data": [...]}"
+ // @Router /api/v1/listAddressBalls [post]
+ func GetWalletsBall(c *gin.Context) {
+-	//result, err := config.CXCConn.ListWalletBalls()
+-	//pkg.AssertErr(err, "抱歉未找到相关信息", -1)
+-
+-	//var res models.Response
+-	//res.Msg = "钱包资产获取成功"
+-	//res.Data = result
+-
+-	param := make(map[string]interface{})
+-	res := make([]map[string]interface{}, 0)
+-	r := make(map[string]interface{})
+-	r1 := make(map[string]interface{})
+-	r2 := make(map[string]interface{})
+-
+-	r["name"] = "AK"
+-	r["assetref"] = "1335667-301-31295"
+-	r["qty"] = 144.453879
+-	res = append(res, r)
+-	r1["name"] = "BET"
+-	r1["assetref"] = "1255517-301-12352"
+-	r1["qty"] = 3.999999
+-	res = append(res, r1)
+-	r2["assetref"] = ""
+-	r2["qty"] = "53.584771"
+-	r2["raw"] = 53584771
+-	res = append(res, r2)
+-
+-	param["1C5kbst7NpzofYi1Nbe9zoujrRBxaVtf8R"] = res
++	result, err := config.CXCConn.ListWalletBalls()
++	pkg.AssertErr(err, "抱歉未找到相关信息", -1)
+ 
+-	r3 := make(map[string]interface{})
+-	r4 := make(map[string]interface{})
+-	r5 := make(map[string]interface{})
+-	r6 := make(map[string]interface{})
+-	res2 := make([]map[string]interface{}, 0)
+-	r3["assetref"] = ""
+-	r3["qty"] = 144.453879
+-	r3["raw"] = 20399900
+-	res2 = append(res2, r3)
+-	param["17jyhnUz1TXo4y5GUCqvEpgLDryvfwMCnx"] = res2
++	var res models.Response
++	res.Msg = "钱包资产获取成功"
++	res.Data = result
+ 
+-	res3 := make([]map[string]interface{}, 0)
+-	r4["name"] = "AK"
+-	r4["assetref"] = "1335667-301-31295"
+-	r4["qty"] = 144.453879
+-	res3 = append(res3, r4)
+-	//res4 := make([]map[string]interface{},0)
+-	r5["name"] = "BET"
+-	r5["assetref"] = "1255517-301-12352"
+-	r5["qty"] = "3.999999"
+-	res3 = append(res3, r5)
+-
+-	r6["assetref"] = "1255517-301-12352"
+-	r6["qty"] = "74.821753"
+-	r6["raw"] = 74821753
+-	res3 = append(res3, r6)
+-	param["total"] = res3
+-	var res1 models.Response
+-	res1.Msg = "钱包资产获取成功"
+-	res1.Data = param
+-
+-	c.JSON(http.StatusOK, res1.ReturnOK())
++	c.JSON(http.StatusOK, res.ReturnOK())
+ }
+ 
+ // @Tags 修改节点密码
+Index: apis/apis.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- apis/apis.go	(revision a9441c629598634f84edefd203e46bdac7304318)
++++ apis/apis.go	(date 1588068845422)
+@@ -27,19 +27,29 @@
+ //彩票投注详情
+ func GetLotteryDetails(c *gin.Context){
+ 	var u models.General
++	var err error
++	var pageSize = 10
++	var pageIndex = 1
++	if size := c.Request.FormValue("pageSize"); size != "" {
++		pageSize = pkg.StrToInt(err, size)
++	}
+ 
++	if index := c.Request.FormValue("pageIndex"); index != "" {
++		pageIndex = pkg.StrToInt(err, index)
++	}
+ 	param := make(map[string]interface{})
+-	param["pageIndex"] = c.Request.FormValue("pageIndex")
+-	param["pageSize"] = c.Request.FormValue("pageSize")
++	param["pageIndex"] = pageIndex
++	param["pageSize"] = pageSize
+ 	param["period"] = c.Request.FormValue("period")
+ 
+-	result,total, err := u.GetLotteryDetails(param)
++	result,count, err := u.GetLotteryDetails(param)
+ 
+ 	pkg.AssertErr(err, "抱歉未找到相关信息", -1)
+ 	var mp = make(map[string]interface{}, 3)
+ 	mp["list"] = result
+-	mp["total"] = total
+-
++	mp["count"] = count
++	param["pageIndex"] = pageIndex
++	param["pageSize"] = pageSize
+ 	var res models.Response
+ 	res.Data = mp
+ 	res.Msg = "查询成功！"
+Index: models/load.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- models/load.go	(revision a9441c629598634f84edefd203e46bdac7304318)
++++ models/load.go	(date 1588068379482)
+@@ -1,12 +1,13 @@
+ package models
+ 
+ import (
+-	orm "betAdmin/database"
++	//orm "betAdmin/database"
+ 	"betAdmin/pkg/export"
+ 	"betAdmin/pkg/file"
+ 	"betAdmin/utils"
+ 	"encoding/json"
+ 	"fmt"
++	"github.com/astaxie/beego/orm"
+ 	"github.com/tealeg/xlsx"
+ 	"log"
+ 	"strconv"
+@@ -18,20 +19,39 @@
+ 
+ //获取总数
+ func GetTotalCount(sql string,value ...string )(count int32){
++	sql = ` select count(1) totalcount from ( `+sql+`)a`
++	sqltotal := ""
+ 	if strings.Contains(sql,"?"){
+-		for i:=0;i<len(value);i++{
+-			sql = strings.Replace(sql,"?","'"+value[i]+"'",i)
++		str := strings.Split(sql,"?")
++		for i:=0;i<len(str);i++{
++			if i < len(str)-1{
++				sqltotal += str[i] +`'`+value[i]+`'`
++			}else{
++				sqltotal += str[i]
++			}
+ 		}
++	}else{
++		sqltotal = sql
+ 	}
+-	sql = ` select count(1) totalcount from ( `+sql+`)a`
+ 	//总数
+-	type total struct{
+-		Totalcount int32
+-	}
+-	var t total
+-	orm.Eloquent.Raw(sql,value[0]).Scan(&t)
++	var param []orm.Params
++	o := orm.NewOrm()
++	o.Raw(sqltotal).Values(&param)
++	total,_ := strconv.Atoi(param[0]["totalcount"].(string))
++
++	return int32(total)
++}
+ 
+-	return t.Totalcount
++//获取总数
++func GetTotalCount1(sql string,value ...string ){
++	sql = ` select name from user where id = ? and sex = ? `
++
++	var param []orm.Params
++	o := orm.NewOrm()
++
++	o.Raw(sql,).Values(&param)
++
++
+ }
+ //导出Excel
+ func GetExcelURL(fun Func,param map[string]interface{})(string,error){
+@@ -69,12 +89,13 @@
+ 	type Dict struct {
+ 		Dicttype string
+ 	}
+-	var d []Dict
++	var parm []orm.Params
++	o := orm.NewOrm()
+ 	sql := `  select dicttype from sys_dict_type `
+-	orm.Eloquent.Raw(sql).Scan(&d)
++	o.Raw(sql).Values(&parm)
+ 	dictstr := ""
+-	for i:=0;i< len(d);i++{
+-		dictstr += d[i].Dicttype+","
++	for i:=0;i< len(parm);i++{
++		dictstr += parm[i]["dicttype"].(string)+","
+ 	}
+ 
+ 	//导出值
+@@ -143,10 +164,10 @@
+ //判断数据库的状态，转化为中文
+ func SatausToChese(dictType string,dictValue float64)(statstr string) {
+ 	sql := " select dictlabel from sys_dict_data where dictType = ? and dictValue = ? "
+-	type dict struct {
+-		Dictlabel string
+-	}
+-	var d dict
+-	orm.Eloquent.Raw(sql,dictType,dictValue).Scan(&d)
+-	return d.Dictlabel
++
++	var parm []orm.Params
++	o := orm.NewOrm()
++	o.Raw(sql,dictType,dictValue).Values(&parm)
++	statstr = parm[0]["dictlabel"].(string)
++	return
+ }
+\ No newline at end of file
