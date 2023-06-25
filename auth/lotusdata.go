@@ -16,7 +16,7 @@ import (
 
 func GetBlock() {
 	go func() {
-		var ctx context.Context
+		ctx := context.Background()
 		rheight, err := redisclient.GetLotusHeight()
 		if err != nil {
 			rheight = 0
